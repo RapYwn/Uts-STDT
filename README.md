@@ -10,38 +10,30 @@ BASE (Basically Available, Soft state, Eventual consistency) adalah filosofi des
 Misalkan sebuah layanan komentar pada posting (microblog). Kita punya 3 node database terdistribusi dan satu pembaca menulis komentar baru ke Node A
 
 # Nomer 2
-flowchart TD
+sequenceDiagram
+    participant C as Client (Web/Mobile)
+    participant G as GraphQL Gateway
+    participant U as User Service
+    participant O as Order Service
+    participant K as Message Bus<br>(Kafka/RabbitMQ)
 
-  %% Client Section
-  subgraph Client
-    A[Client App<br>(Web / Mobile)]
-  end
+    C->>G: Kirim GraphQL Query<br>user(id) & ordersByUser(id)
+    G->>U: HTTP/gRPC Request<br>Get User Data
+    U-->>G: Return User Response
 
-  %% GraphQL Gateway
-  subgraph Gateway[GraphQL API Gateway]
-    G(GraphQL Server / Apollo / Yoga)
-  end
+    G->>O: HTTP/gRPC Request<br>Get Orders by User ID
+    O-->>G: Return Orders Response
 
-  %% Microservices block
-  subgraph Microservices[Distributed Microservices]
-    direction LR
-    S1[Service User<br>REST / gRPC] --> DB1[(User DB)]
-    S2[Service Order<br>REST / gRPC] --> DB2[(Order DB)]
-  end
+    Note over G: GraphQL melakukan agregasi data<br>dan membentuk response final
 
-  %% Message broker
-  subgraph MessageBus[Message Bus (Async IPC)]
-    K[Kafka / RabbitMQ]
-  end
+    G-->>C: Hasil Query GraphQL (User + Orders)
 
-  %% Flows
-  A -->|GraphQL Query / Mutation| G
-  G -->|Fetch user data| S1
-  G -->|Fetch order data| S2
+    %% Contoh proses asinkron setelah order dibuat
+    C->>G: GraphQL Mutation<br>createOrder
+    G->>O: Request Create Order
+    O-->>G: Confirm Order Created
 
-  S2 -->|Publish event: order_created| K
-  S1 -->|Consume event| K
+    O->>K: Publish Event<br>order_created
+    K->>U: Deliver Event<br>(Consume order_created)
 
-  %% Styling
-  classDef gateway fill:#f9f,stroke:#333,stroke-width:1px,border-radius:6px;
-  class G gateway;
+    U-->>K: Processed Event Ack
