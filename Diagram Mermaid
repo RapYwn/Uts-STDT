@@ -1,9 +1,41 @@
-\`\`\`mermaid
-graph TD;
-    A[Mulai] --> B(Mengerjakan Tugas);
-    B --> C{Apakah Selesai?};
-    C -->|Ya| D[Review Kode];
-    C -->|Tidak| B;
-    D --> E[Gabungkan (Merge) ke Main];
-    E --> F[Selesai];
-\`\`\`
+graph TD
+    subgraph Client/External System
+        C[Aplikasi Web/Mobile] --> |GraphQL Query| G
+        S[Internal Service A] --> |GraphQL Query| G
+    end
+
+    subgraph GraphQL Gateway (Orkestrator/Federasi)
+        G[GraphQL Gateway]
+    end
+
+    subgraph Distributed Services
+        MS1[Microservice 1: User Service]
+        MS2[Microservice 2: Product Service]
+        MS3[Microservice 3: Order Service]
+        MS4[Microservice N: Other Service]
+    end
+
+    G --> |HTTP/gRPC/Internal API Call| MS1
+    G --> |HTTP/gRPC/Internal API Call| MS2
+    G --> |HTTP/gRPC/Internal API Call| MS3
+    G --> |HTTP/gRPC/Internal API Call| MS4
+
+    MS1 -- "GraphQL Endpoint (Internal)" --> |(Optional) Direct Query by Other Services| MS2
+    MS2 -- "GraphQL Endpoint (Internal)" --> |(Optional) Direct Query by Other Services| MS3
+
+    style G fill:#f9f,stroke:#333,stroke-width:2px
+    style C fill:#ccf,stroke:#333,stroke-width:2px
+    style S fill:#ccf,stroke:#333,stroke-width:2px
+    style MS1 fill:#cfc,stroke:#333,stroke-width:2px
+    style MS2 fill:#cfc,stroke:#333,stroke-width:2px
+    style MS3 fill:#cfc,stroke:#333,stroke-width:2px
+    style MS4 fill:#cfc,stroke:#333,stroke-width:2px
+
+    linkStyle 0 stroke:#000,stroke-width:2px,fill:none;
+    linkStyle 1 stroke:#000,stroke-width:2px,fill:none;
+    linkStyle 2 stroke:#000,stroke-width:2px,fill:none;
+    linkStyle 3 stroke:#000,stroke-width:2px,fill:none;
+    linkStyle 4 stroke:#000,stroke-width:2px,fill:none;
+    linkStyle 5 stroke:#000,stroke-width:2px,fill:none;
+    linkStyle 6 stroke-dasharray: 5 5,stroke-width:1px;
+    linkStyle 7 stroke-dasharray: 5 5,stroke-width:1px;
