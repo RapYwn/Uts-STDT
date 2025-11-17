@@ -10,37 +10,29 @@ BASE (Basically Available, Soft state, Eventual consistency) adalah filosofi des
 Misalkan sebuah layanan komentar pada posting (microblog). Kita punya 3 node database terdistribusi dan satu pembaca menulis komentar baru ke Node A
 
 # nomer 2
-README.md
-docker-compose.yml
-primary/
-└─ init-primary.sql
-replica/
-└─ entrypoint-replica.sh
-└─ create-replica.conf.template
-.env
-sequenceDiagram
-participant Client
-participant GraphQL_Gateway as Gateway
-participant SvcA
-participant SvcB
-participant Cache
+flowchart TD
+  subgraph Client
+    A[Browser / Mobile Client]
+  end
 
+  subgraph Gateway[GraphQL Gateway]
+    G(GraphQL Endpoint / Apollo Server)
+  end
 
-Client->>Gateway: GraphQL query { post(id:1) { id, author { name }, comments { text } }}
-Gateway->>Cache: check cache for post:1
-alt hit
-Cache-->>Gateway: cached post
-else miss
-Gateway->>SvcA: GET /posts/1 (HTTP/gRPC)
-Gateway->>SvcB: GET /posts/1/comments (HTTP/gRPC)
-SvcA-->>Gateway: post-data
-SvcB-->>Gateway: comments-data
-Gateway->>Cache: store aggregated result
-end
-Gateway-->>Client: merged response JSON
+  subgraph SyncServices[Microservices (synchronous)]
+    S1(Service A - Users) -->|HTTP/gRPC| DB1[(User DB)]
+    S2(Service B - Orders) -->|HTTP/gRPC| DB2[(Order DB)]
+  end
 
-# nomer 3
-POSTGRES_PASSWORD=postgrespw
-REPLICATION_USER=replicator
-REPLICATION_PASSWORD=replicapw
-PG_MAJOR=15
+  subgraph AsyncBus[Async Messaging]
+    K[Kafka / RabbitMQ]
+  end
+
+  A -->|GraphQL Query / Mutation| G
+  G -->|Fetch User| S1
+  G -->|Fetch Orders| S2
+  S2 -->|Publish Event order_created| K
+  S1 -->|Consume Event| K
+
+  classDef gateway fill:#f9f,stroke:#333,stroke-width:1px;
+  class G gateway;
