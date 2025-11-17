@@ -1,5 +1,7 @@
 # Uts-STDT
-
+Nama Repo   : Rap
+Nama        : Rafli Yuwan I.A
+Nim         : 245410092
 #Nomer 1
 CAP (Consistency, Availability, Partition tolerance) teorema yang menyatakan pada sistem terdistribusi, pada saat terjadi partisi jaringan (network partition), sebuah sistem hanya bisa menjamin dua dari tiga properti berikut secara bersamaan
 Contoh : 
